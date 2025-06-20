@@ -8,15 +8,14 @@ function App() {
   const [materia, setMateria] = useState("")
   const [tarefas, setTarefas] = useState([])
 
-  // Estado para controlar se mostra a seleção para filtrar
   const [mostrarFiltro, setMostrarFiltro] = useState(false)
-  const [materiaFiltro, setMateriaFiltro] = useState("") // matéria que vai filtrar
+  const [materiaFiltro, setMateriaFiltro] = useState("")
+  const [diaFiltro, setDiaFiltro] = useState("")
   const [tarefasFiltradas, setTarefasFiltradas] = useState([])
 
   const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"]
   const materias = ["Matemática", "História", "Física", "Português", "Química", "Geografia", "Biologia", "Filosofia"]
 
-  // Adiciona nova tarefa
   const handleClick = () => {
     if (!titulo || !desc || dias.length === 0 || materia === "") {
       alert("Preencha todos os campos!")
@@ -24,7 +23,7 @@ function App() {
     }
 
     const novaTarefa = {
-      id: tarefas.length,
+      id: Date.now(),
       titulo,
       desc,
       dias,
@@ -32,17 +31,17 @@ function App() {
       concluida: false
     }
 
-    setTarefas([...tarefas, novaTarefa])
+    setTarefas(prev => [...prev, novaTarefa])
     setTitulo("")
     setDesc("")
     setDias([])
     setMateria("")
-    setMostrarFiltro(false)  // Esconde filtro ao adicionar nova tarefa
-    setTarefasFiltradas([])  // Limpa resultado do filtro
+    setMostrarFiltro(false)
+    setTarefasFiltradas([])
     setMateriaFiltro("")
+    setDiaFiltro("")
   }
 
-  // Lógica de dias escolhidos
   const handleCheckDia = (dia) => {
     if (dias.includes(dia)) {
       setDias(dias.filter(d => d !== dia))
@@ -51,7 +50,6 @@ function App() {
     }
   }
 
-  // Alterna tarefa concluída
   const toggleConcluir = (id) => {
     const novas = tarefas.map(tarefa =>
       tarefa.id === id ? { ...tarefa, concluida: !tarefa.concluida } : tarefa
@@ -59,58 +57,57 @@ function App() {
     setTarefas(novas)
   }
 
-  // Remove tarefa
   const removerTarefa = (id) => {
     setTarefas(tarefas.filter(tarefa => tarefa.id !== id))
-    // Atualiza a lista filtrada caso esteja filtrando
     setTarefasFiltradas(tarefasFiltradas.filter(tarefa => tarefa.id !== id))
   }
 
-  // Quando clicar em filtrar, mostra a lista de matérias para escolher
   const abrirFiltro = () => {
     setMostrarFiltro(true)
-    setTarefasFiltradas([])  // Limpa filtro anterior
+    setTarefasFiltradas([])
     setMateriaFiltro("")
+    setDiaFiltro("")
   }
 
-  // Executa o filtro após escolher a matéria e clicar em filtrar
   const aplicarFiltro = () => {
-    if (materiaFiltro === "") {
-      alert("Escolha uma matéria para filtrar!")
+    if (materiaFiltro === "" && diaFiltro === "") {
+      alert("Escolha pelo menos um filtro!")
       return
     }
-    const filtradas = tarefas.filter(tarefa => tarefa.materia === materiaFiltro)
+    const filtradas = tarefas.filter(tarefa => {
+      const matchMateria = materiaFiltro ? tarefa.materia === materiaFiltro : true
+      const matchDia = diaFiltro ? tarefa.dias.includes(diaFiltro) : true
+      return matchMateria && matchDia
+    })
     setTarefasFiltradas(filtradas)
     setMostrarFiltro(false)
   }
 
-  // Para limpar o filtro e mostrar tudo novamente
   const limparFiltro = () => {
     setTarefasFiltradas([])
     setMateriaFiltro("")
+    setDiaFiltro("")
   }
 
   return (
     <div className="container">
-      <div className="card">
-
+      <div className="top-section">
         <input
-          className='titulo'
+          className='input'
           type="text"
-          placeholder='Digite o título...'
+          placeholder='Título'
           onChange={e => setTitulo(e.target.value)}
           value={titulo}
         />
         <input
-          className='desc'
+          className='input'
           type="text"
-          placeholder='Digite a descrição...'
+          placeholder='Descrição'
           onChange={e => setDesc(e.target.value)}
           value={desc}
         />
 
-        <div>
-          <p>Escolha os dias:</p>
+        <div className="checkbox-group">
           {diasSemana.map((dia) => (
             <label key={dia}>
               <input
@@ -118,89 +115,75 @@ function App() {
                 onChange={() => handleCheckDia(dia)}
                 checked={dias.includes(dia)}
               />
-              {dia}
+              <span>{dia}</span>
             </label>
           ))}
         </div>
 
-        <div>
-          <select
-            className="select-materia"
-            value={materia}
-            onChange={e => setMateria(e.target.value)}
-          >
-            <option value="">Escolha a matéria...</option>
-            {materias.map(mat => (
-              <option key={mat} value={mat}>{mat}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          className="select"
+          value={materia}
+          onChange={e => setMateria(e.target.value)}
+        >
+          <option value="">Matéria</option>
+          {materias.map(mat => (
+            <option key={mat} value={mat}>{mat}</option>
+          ))}
+        </select>
 
-        <button onClick={handleClick}>Adicionar tarefa</button>
+        <button className="btn" onClick={handleClick}>Adicionar tarefa</button>
+        <button className="btn outline" onClick={abrirFiltro}>Filtrar tarefas</button>
 
-        <hr />
-
-        {/* Botão para mostrar filtro */}
-        <button onClick={abrirFiltro}>Filtrar tarefas por matéria</button>
-
-        {/* Se mostrarFiltro for true, exibe o select para escolher matéria e o botão para filtrar */}
         {mostrarFiltro && (
-          <div style={{ marginTop: "10px" }}>
+          <div className="filtro-box">
             <select
               value={materiaFiltro}
               onChange={e => setMateriaFiltro(e.target.value)}
+              className="select"
             >
-              <option value="">Escolha a matéria para filtrar...</option>
+              <option value="">Matéria</option>
               {materias.map(mat => (
                 <option key={mat} value={mat}>{mat}</option>
               ))}
             </select>
-            <button onClick={aplicarFiltro}>Filtrar</button>
-            <button onClick={() => setMostrarFiltro(false)}>Cancelar</button>
+            <select
+              value={diaFiltro}
+              onChange={e => setDiaFiltro(e.target.value)}
+              className="select"
+            >
+              <option value="">Dia</option>
+              {diasSemana.map(dia => (
+                <option key={dia} value={dia}>{dia}</option>
+              ))}
+            </select>
+            <button className="btn" onClick={aplicarFiltro}>Filtrar</button>
+            <button className="btn outline" onClick={() => setMostrarFiltro(false)}>Cancelar</button>
           </div>
         )}
+      </div>
 
-        <hr />
-
-        {/* Lista de tarefas filtradas, se houver */}
-        {tarefasFiltradas.length > 0 ? (
-          <>
-            <h2>Tarefas Filtradas</h2>
-            {tarefasFiltradas.map(tarefa => (
-              <div key={tarefa.id}>
-                <p><strong>Título:</strong> {tarefa.titulo}</p>
-                <p><strong>Descrição:</strong> {tarefa.desc}</p>
-                <p><strong>Matéria:</strong> {tarefa.materia}</p>
-                <p><strong>Dias:</strong> {tarefa.dias.join(", ")}</p>
-                <p><strong>Status:</strong> {tarefa.concluida ? "Concluída" : "Pendente"}</p>
-                <button onClick={() => toggleConcluir(tarefa.id)}>
+      <div className="bottom-section">
+        <h2>{tarefasFiltradas.length > 0 ? "Tarefas Filtradas" : "Todas as Tarefas"}</h2>
+        <div className="tarefas-box">
+          {(tarefasFiltradas.length > 0 ? tarefasFiltradas : tarefas).map(tarefa => (
+            <div key={tarefa.id} className="tarefa">
+              <p><strong>Título:</strong> {tarefa.titulo}</p>
+              <p><strong>Descrição:</strong> {tarefa.desc}</p>
+              <p><strong>Matéria:</strong> {tarefa.materia}</p>
+              <p><strong>Dias:</strong> {tarefa.dias.join(", ")}</p>
+              <p><strong>Status:</strong> {tarefa.concluida ? "Concluída" : "Pendente"}</p>
+              <div className="tarefa-buttons">
+                <button className="btn small" onClick={() => toggleConcluir(tarefa.id)}>
                   {tarefa.concluida ? "Desmarcar" : "Concluir"}
                 </button>
-                <button onClick={() => removerTarefa(tarefa.id)}>Remover</button>
+                <button className="btn small outline" onClick={() => removerTarefa(tarefa.id)}>Remover</button>
               </div>
-            ))}
-            <button onClick={limparFiltro} style={{ marginTop: '10px' }}>Limpar filtro</button>
-          </>
-        ) : (
-          <>
-            <h2>Lista de Tarefas</h2>
-            {tarefas.length === 0 && <p>Nenhuma tarefa adicionada.</p>}
-            {tarefas.map(tarefa => (
-              <div key={tarefa.id}>
-                <p><strong>Título:</strong> {tarefa.titulo}</p>
-                <p><strong>Descrição:</strong> {tarefa.desc}</p>
-                <p><strong>Matéria:</strong> {tarefa.materia}</p>
-                <p><strong>Dias:</strong> {tarefa.dias.join(", ")}</p>
-                <p><strong>Status:</strong> {tarefa.concluida ? "Concluída" : "Pendente"}</p>
-                <button onClick={() => toggleConcluir(tarefa.id)}>
-                  {tarefa.concluida ? "Desmarcar" : "Concluir"}
-                </button>
-                <button onClick={() => removerTarefa(tarefa.id)}>Remover</button>
-              </div>
-            ))}
-          </>
-        )}
-
+            </div>
+          ))}
+          {tarefasFiltradas.length > 0 && (
+            <button className="btn limpar" onClick={limparFiltro}>Limpar Filtro</button>
+          )}
+        </div>
       </div>
     </div>
   )
